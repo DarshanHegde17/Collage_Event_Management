@@ -2,8 +2,7 @@
 
 A comprehensive web-based event management system for colleges built with **Java Spring Boot**, **HTML/CSS**, and **MongoDB**.
 
-> **👋 New here? Start with [START_HERE.md](START_HERE.md) or [QUICK_START.md](QUICK_START.md)**  
-> **📚 Need documentation? Check [INDEX.md](INDEX.md) for complete guide**
+
 
 ## 📋 Features
 
