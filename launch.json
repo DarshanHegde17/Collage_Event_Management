@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "EventManagementApplication",
+            "request": "launch",
+            "mainClass": "com.college.event.EventManagementApplication",
+            "projectName": "event-management"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-CollegeEventApplication",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.college.event.CollegeEventApplication",
+            "projectName": "event-registration",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "vmArgs": "-Dspring.profiles.active=default"
+        }
+    ]
+}

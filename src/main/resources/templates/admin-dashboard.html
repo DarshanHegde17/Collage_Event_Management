@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - College Event Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Extra UI Enhancements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: url('https://www.transparenttextures.com/patterns/diamond-upholstery.png');
+            opacity: 0.08;
+            z-index: 0;
+        }
+        .dashboard {
+            position: relative;
+            z-index: 1;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #667eea 60%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 24px rgba(102,126,234,0.08);
+        }
+        .navbar h2 {
+            color: white;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .nav-right span {
+            color: #f7fafc;
+        }
+        .section {
+            border: 1.5px solid #e2e8f0;
+            box-shadow: 0 2px 16px rgba(102,126,234,0.04);
+        }
+        .event-form {
+            box-shadow: 0 2px 12px rgba(102,126,234,0.07);
+        }
+        .btn {
+            letter-spacing: 0.5px;
+        }
+        .btn-danger {
+            background: linear-gradient(90deg, #f56565 60%, #e53e3e 100%);
+        }
+        .btn-danger:hover {
+            background: #c53030;
+        }
+        .footer {
+            text-align: center;
+            color: #718096;
+            padding: 30px 0 10px 0;
+            font-size: 15px;
+            margin-top: 40px;
+        }
+        .section-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header h2 .fa {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- SVG Decorative Shape -->
+        <svg style="position:absolute;top:0;left:0;width:100%;height:120px;z-index:0;" viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#667eea" fill-opacity="0.13" d="M0,32L48,53.3C96,75,192,117,288,117.3C384,117,480,75,576,74.7C672,75,768,117,864,117.3C960,117,1056,75,1152,69.3C1248,64,1344,96,1392,112L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>
+        <div class="navbar">
+            <h2><i class="fa fa-user-tie"></i>&nbsp;Admin Dashboard</h2>
+            <div class="nav-right">
+                <span>Welcome, <strong th:text="${username}">Admin</strong></span>
+                <a href="/admin/logout" class="btn btn-small btn-outline"><i class="fa fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fa fa-calendar-plus"></i> Create New Event</h2>
+                </div>
+                
+                <form id="createEventForm" class="event-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Event Name *</label>
+                            <input type="text" id="eventName" placeholder="Enter event name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Venue *</label>
+                            <input type="text" id="venue" placeholder="Enter venue" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Event Date & Time *</label>
+                            <input type="datetime-local" id="eventDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Participant Limit *</label>
+                            <input type="number" id="participantLimit" placeholder="Max participants" min="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description *</label>
+                        <textarea id="description" rows="3" placeholder="Enter event description" required></textarea>
+                    </div>
+                    
+                    <div id="createMessage" class="message"></div>
+                    
+                    <button type="submit" class="btn btn-primary">Create Event</button>
+                </form>
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fa fa-list"></i> All Events</h2>
+                    <button onclick="loadEvents()" class="btn btn-small btn-outline"><i class="fa fa-sync-alt"></i> Refresh</button>
+                </div>
+                
+                <div id="eventsContainer" class="events-grid"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <h2><i class="fa fa-users"></i> All Registrations</h2>
+                    <button onclick="loadRegistrations()" class="btn btn-small btn-outline"><i class="fa fa-sync-alt"></i> Refresh</button>
+                </div>
+                
+                <div id="registrationsContainer" class="table-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Load events on page load
+        window.onload = function() {
+            displayEvents();
+            loadRegistrations();
+        };
+        
+        // Create Event
+        document.getElementById('createEventForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const eventData = {
+                eventName: document.getElementById('eventName').value,
+                venue: document.getElementById('venue').value,
+                eventDate: document.getElementById('eventDate').value,
+                participantLimit: parseInt(document.getElementById('participantLimit').value),
+                description: document.getElementById('description').value
+            };
+            
+            const messageDiv = document.getElementById('createMessage');
+            
+            try {
+                const response = await fetch('/admin/event/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(eventData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    messageDiv.className = 'message success';
+                    messageDiv.textContent = data.message;
+                    document.getElementById('createEventForm').reset();
+                    
+                    // Refresh events list without page reload
+                    await loadEventsFromAPI();
+                } else {
+                    messageDiv.className = 'message error';
+                    messageDiv.textContent = data.message;
+                }
+            } catch (error) {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = 'Failed to create event.';
+            }
+        });
+        
+        // Load Events from API (without page reload)
+        async function loadEventsFromAPI() {
+            try {
+                const response = await fetch('/admin/events');
+                const events = await response.json();
+                
+                const container = document.getElementById('eventsContainer');
+                
+                if (events.length === 0) {
+                    container.innerHTML = '<p class="no-data">No events created yet.</p>';
+                    return;
+                }
+                
+                let html = '';
+                events.forEach(event => {
+                    const date = new Date(event.eventDate).toLocaleString();
+                    const percentage = (event.currentParticipants / event.participantLimit * 100).toFixed(0);
+                    
+                    html += `
+                        <div class="event-card">
+                            <h3>${event.eventName}</h3>
+                            <p class="event-description">${event.description}</p>
+                            <div class="event-details">
+                                <p>📍 <strong>Venue:</strong> ${event.venue}</p>
+                                <p>📅 <strong>Date:</strong> ${date}</p>
+                                <p>👥 <strong>Participants:</strong> ${event.currentParticipants} / ${event.participantLimit}</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                            <button onclick="deleteEvent('${event.id}')" class="btn btn-danger btn-small"><i class="fa fa-trash"></i> Delete Event</button>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+        
+        // Load Events - Called by refresh button
+        function loadEvents() {
+            loadEventsFromAPI();
+        }
+        
+        // Delete Event
+        async function deleteEvent(eventId) {
+            if (!confirm('Are you sure you want to delete this event?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/admin/event/delete/${eventId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                    // Refresh events list without page reload
+                    await loadEventsFromAPI();
+                    // Also refresh registrations as they might be affected
+                    await loadRegistrations();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Failed to delete event.');
+            }
+        }
+        
+        // Load Registrations
+        async function loadRegistrations() {
+            try {
+                const response = await fetch('/admin/registrations');
+                const registrations = await response.json();
+                
+                const container = document.getElementById('registrationsContainer');
+                
+                if (registrations.length === 0) {
+                    container.innerHTML = '<p class="no-data">No registrations yet.</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr>';
+                html += '<th>Registration ID</th><th>Student Name</th><th>Event Name</th>';
+                html += '<th>Registered At</th><th>Status</th></tr></thead><tbody>';
+                
+                registrations.forEach(reg => {
+                    const date = new Date(reg.registeredAt).toLocaleString();
+                    html += `<tr>
+                        <td><strong>${reg.registrationId}</strong></td>
+                        <td>${reg.studentName}</td>
+                        <td>${reg.eventName}</td>
+                        <td>${date}</td>
+                        <td><span class="badge badge-success"><i class="fa fa-check-circle"></i> ${reg.status}</span></td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading registrations:', error);
+            }
+        }
+    </script>
+    
+    <script th:inline="javascript">
+        // Display events from Thymeleaf
+        const events = /*[[${events}]]*/ [];
+        
+        function displayEvents() {
+            const container = document.getElementById('eventsContainer');
+            
+            if (events.length === 0) {
+                container.innerHTML = '<p class="no-data">No events created yet.</p>';
+                return;
+            }
+            
+            let html = '';
+            events.forEach(event => {
+                const date = new Date(event.eventDate).toLocaleString();
+                const percentage = (event.currentParticipants / event.participantLimit * 100).toFixed(0);
+                
+                html += `
+                    <div class="event-card">
+                        <h3>${event.eventName}</h3>
+                        <p class="event-description">${event.description}</p>
+                        <div class="event-details">
+                            <p>📍 <strong>Venue:</strong> ${event.venue}</p>
+                            <p>📅 <strong>Date:</strong> ${date}</p>
+                            <p>👥 <strong>Participants:</strong> ${event.currentParticipants} / ${event.participantLimit}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        <button onclick="deleteEvent('${event.id}')" class="btn btn-danger btn-small">Delete Event</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        displayEvents();
+    </script>
+        <div class="footer">
+            &copy; 2026 College Event Management &mdash; Designed by Your Team
+        </div>
+    </div>
+</body>
+</html>

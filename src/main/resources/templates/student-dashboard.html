@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - College Event Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <div class="navbar">
+            <h2>👨‍🎓 Student Dashboard</h2>
+            <div class="nav-right">
+                <span>Welcome, <strong th:text="${studentName}">Student</strong></span>
+                <a href="/student/logout" class="btn btn-small">Logout</a>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2>📅 Available Events</h2>
+                    <button onclick="location.reload()" class="btn btn-small">Refresh</button>
+                </div>
+                
+                <div id="eventsContainer" class="events-grid"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header">
+                    <h2>📋 My Registrations</h2>
+                    <button onclick="loadMyRegistrations()" class="btn btn-small">Refresh</button>
+                </div>
+                
+                <div id="myRegistrationsContainer" class="table-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="registrationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>🎉 Registration Successful!</h2>
+            <p>Your registration ID is:</p>
+            <h1 id="registrationId" class="registration-id"></h1>
+            <p>Please save this ID for future reference.</p>
+            <button onclick="closeModal()" class="btn btn-primary">Close</button>
+        </div>
+    </div>
+    
+    <script>
+        window.onload = function() {
+            loadMyRegistrations();
+        };
+        
+        // Register for Event
+        async function registerForEvent(eventId, eventName) {
+            if (!confirm(`Do you want to register for "${eventName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/student/event/register/${eventId}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('registrationId').textContent = data.registrationId;
+                    document.getElementById('registrationModal').style.display = 'block';
+                    loadMyRegistrations();
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                alert('Registration failed. Please try again.');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('registrationModal').style.display = 'none';
+        }
+        
+        // Load My Registrations
+        async function loadMyRegistrations() {
+            try {
+                const response = await fetch('/student/registrations');
+                const registrations = await response.json();
+                
+                const container = document.getElementById('myRegistrationsContainer');
+                
+                if (registrations.length === 0) {
+                    container.innerHTML = '<p class="no-data">You have not registered for any events yet.</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr>';
+                html += '<th>Registration ID</th><th>Event Name</th><th>Registered At</th><th>Status</th></tr></thead><tbody>';
+                
+                registrations.forEach(reg => {
+                    const date = new Date(reg.registeredAt).toLocaleString();
+                    html += `<tr>
+                        <td><strong>${reg.registrationId}</strong></td>
+                        <td>${reg.eventName}</td>
+                        <td>${date}</td>
+                        <td><span class="badge badge-success">${reg.status}</span></td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading registrations:', error);
+            }
+        }
+    </script>
+    
+    <script th:inline="javascript">
+        const events = /*[[${events}]]*/ [];
+        
+        function displayEvents() {
+            const container = document.getElementById('eventsContainer');
+            
+            if (events.length === 0) {
+                container.innerHTML = '<p class="no-data">No events available at the moment.</p>';
+                return;
+            }
+            
+            let html = '';
+            events.forEach(event => {
+                const date = new Date(event.eventDate).toLocaleString();
+                const percentage = (event.currentParticipants / event.participantLimit * 100).toFixed(0);
+                const isFull = event.currentParticipants >= event.participantLimit;
+                
+                html += `
+                    <div class="event-card">
+                        <h3>${event.eventName}</h3>
+                        <p class="event-description">${event.description}</p>
+                        <div class="event-details">
+                            <p>📍 <strong>Venue:</strong> ${event.venue}</p>
+                            <p>📅 <strong>Date:</strong> ${date}</p>
+                            <p>👥 <strong>Available Seats:</strong> ${event.participantLimit - event.currentParticipants} / ${event.participantLimit}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        ${isFull ? 
+                            '<button class="btn btn-disabled btn-block" disabled>Event Full</button>' :
+                            `<button onclick="registerForEvent('${event.id}', '${event.eventName}')" class="btn btn-success btn-block">Register Now</button>`
+                        }
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        displayEvents();
+    </script>
+</body>
+</html>
