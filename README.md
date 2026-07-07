@@ -2,8 +2,6 @@
 
 A comprehensive web-based event management system for colleges built with **Java Spring Boot**, **HTML/CSS**, and **MongoDB**.
 
-
-
 ## 📋 Features
 
 ### Admin Module
