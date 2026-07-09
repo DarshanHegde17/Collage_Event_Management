@@ -10,6 +10,7 @@ A comprehensive web-based event management system for colleges built with **Java
 - ✅ View all student registrations
 - ✅ Real-time participant tracking
 
+
 ### Student Module
 - ✅ Student registration with complete profile
 - ✅ Secure login system
