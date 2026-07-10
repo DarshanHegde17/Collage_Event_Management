@@ -1,6 +1,7 @@
 # 🎓 College Event Management System
 A comprehensive web-based event management system for colleges built with **Java Spring Boot**, **HTML/CSS**, and **MongoDB**.
 
+
 ## 📋 Features
 ### Admin Module
 - ✅ Secure login (Username: `nit`, Password: `nit`)
